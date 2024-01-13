@@ -66,10 +66,10 @@ hgl.setAttribute("transform","translate("+vertices[startVrt][0]*U+" "+(-vertices
 
 function next_turn() {
 playerPos++; if (playerPos==K) { playerPos=0; roundNum++; }
-if (roundNum!=M) mylog("Round "+(roundNum+1)+"/"+M+((roundNum==M-1)?" (final)":"")+
+if (roundNum<M) mylog("Round "+(roundNum+1)+"/"+M+((roundNum==M-1)?" (final)":"")+
 ": <span style=\"color: "+colors[playerPos]+";\">"+players[playerPos]+"</span>'s turn");
 else { var winner="Nobody",col="black"; gameOver=true;
-for (var i=0;i<M;++i) if (winning[i][startVrt]) { winner=players[i]; col=colors[i]; break; }
+for (var i=0;i<K;++i) if (winning[i][startVrt]) { winner=players[i]; col=colors[i]; break; }
 mylog("Game is over! <span style=\"color: "+col+";\">"+winner+"</span> won!"); console.log(log); } }
 
 function draw_field() {
@@ -146,6 +146,7 @@ log+=startVrt+" 1;"; roundNum=0; playerPos=-1; gameOver=false; next_turn();
 }
 
 function make_turn() {
+console.debug("startVrt,moveVrt,gameOver,playerPos,roundNum\n",startVrt,moveVrt,gameOver,playerPos,roundNum);
 if (gameOver) { myalert("Game is over!"); return; }
 if (moveVrt==null) { myalert("You must choose a vertex!"); return; }
 if (edges[startVrt][moveVrt]==0) { myalert("There must be an edge between chosen vertices!"); return; }
