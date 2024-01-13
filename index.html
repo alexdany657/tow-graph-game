@@ -66,7 +66,7 @@ hgl.setAttribute("transform","translate("+vertices[startVrt][0]*U+" "+(-vertices
 
 function next_turn() {
 playerPos++; if (playerPos==K) { playerPos=0; roundNum++; }
-if (roundNum!=M) mylog("Round "+(roundNum+1)+((roundNum==M-1)?" (final)":"")+
+if (roundNum!=M) mylog("Round "+(roundNum+1)+"/"+M+((roundNum==M-1)?" (final)":"")+
 ": <span style=\"color: "+colors[playerPos]+";\">"+players[playerPos]+"</span>'s turn");
 else { var winner="nobody",col="black";
 for (var i=0;i<M;++i) if (winning[i][startVrt]) { winner=players[i]; col=colors[i]; break; }
@@ -101,8 +101,8 @@ if (K<=1) { myalert("Number of players must be at least 2!"); return; }
 if (winning.length!=K) { myalert("Incorrect number of entries in winning array: "+winning.length+"!"); return; }
 if (players.length!=K) { myalert("Incorrect number of entries in players array: "+players.length+"!"); return; }
 if (colors.length!=K) { myalert("Incorrect number of entries in colors array: "+colors.length+"!"); return; }
+var tr=document.getElementById("players"); tr.innerHTML="";
 for (var i=0;i<K;++i) {
-var tr=document.getElementById("players");
 tr.innerHTML+="<td><span style=\"color: "+colors[i]+";\">"+players[i]+"</span></td>";
 if (winning[i].length!=N) {
 myalert("Incorrect number of elements in winning array at position "+i+": "+winning[i].length+"!"); return; }
@@ -141,13 +141,14 @@ gv.appendChild(o); gv.appendChild(t); gv.appendChild(pho);
 for (var j=i+1;j<N;++j) if (edges[i][j])
 s+="M"+vertices[i][0]*U+" "+(-vertices[i][1]*U)+"L"+vertices[j][0]*U+" "+(-vertices[j][1]*U); }
 edg.setAttribute("d",s);
-next_turn();
+if (log.length!=0) {console.log("Old log\n"+log); log=""; }
+log+=startVrt+" 1;"; roundNum=0; playerPos=-1; next_turn();
 }
 
 function make_turn() {
 if (moveVrt==null) { myalert("You must choose a vertex!"); return; }
 if (edges[startVrt][moveVrt]==0) { myalert("There must be an edge between chosen vertices!"); return; }
-var val=Math.random(); console.log(startVrt,moveVrt,val); log+=moveVrt+" "+(val<p)?1:0+";";
+var val=Math.random(); console.log(startVrt,moveVrt,val); log+=moveVrt+" "+((val<p)?1:0)+";";
 draw_arrow(mu(vertices[startVrt],U),mu(vertices[moveVrt],U),(val<p)?dgre:dred); startVrt=(val<p)?moveVrt:startVrt;
 moveVrt=null; if (val<p) move_hgl(moveVrt); next_turn(); }
 </script>
