@@ -219,25 +219,24 @@ if (!(("fieldDesc" in data)&&(data.fieldDesc==""))) {
 if ("fieldDesc" in data) {
 document.getElementById("field_desc").innerHTML=data.fieldDesc; __update=true; draw_field(true); }
 if (fieldCreated) {
-for (key in data) {
-if (key=="p") p=+data.p;
-if (key=="players") {
+if ("p" in data) p=+data.p;
+if ("players" in data) {
 for (var i=0;i<players.length;++i) {
 var fl=false;
 for (var j=0;j<data.players.length;++j)
 if (data.players[j]==players[i]) fl=true;
 document.getElementById("player"+i).style.backgroundColor=fl?colors[i]:"gray"; } }
-if (key=="pos") { startVrt=data.pos; move_hgl(startVrt); }
-if (key=="movePos"&&data.movePos!=null) { moveVrt=data.movePos;
+if ("pos" in data) { startVrt=data.pos; move_hgl(startVrt); }
+if ("movePos" in data&&data.movePos!=null) { moveVrt=data.movePos;
 if (startVrt!=moveVrt&&moveVrt!=null&&startVrt!=null)
 draw_arrow(mu(vertices[startVrt],U),mu(vertices[moveVrt],U),(edges[startVrt][moveVrt]==1)?"gray":dred);
 else hide_arrow(); }
-if (key=="gameOver"&&data.gameOver) { gameOver=true; do_game_over(); }
-if (key=="gameStarted"&&data.gameStarted) {gameStarted=true; do_game_started(); }
-if (key=="playerPos") { playerPos=data.playerPos; set_round_label(); }
-if (key=="roundNum") { roundNum=data.roundNum; set_round_label(); }
-if (key=="log") { serverLog=data.log; }
-} } } } }; }
+if ("gameOver" in data&&data.gameOver) { gameOver=true; do_game_over(); }
+if ("gameStarted" in data&&data.gameStarted) {gameStarted=true; do_game_started(); }
+if ("playerPos" in data) { playerPos=data.playerPos; set_round_label(); }
+if ("roundNum" in data) { roundNum=data.roundNum; set_round_label(); }
+if ("log" in data) { serverLog=data.log; }
+} } } }; }
 
 function outOfRoom() {
 document.getElementById("field_submit").disabled=true;
