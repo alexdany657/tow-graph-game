@@ -232,11 +232,11 @@ if ("movePos" in data&&data.movePos!=null) { moveVrt=data.movePos;
 if (startVrt!=moveVrt&&moveVrt!=null&&startVrt!=null)
 draw_arrow(mu(vertices[startVrt],U),mu(vertices[moveVrt],U),(edges[startVrt][moveVrt]==1)?"gray":dred);
 else hide_arrow(); }
-if ("gameOver" in data&&data.gameOver) { gameOver=true; do_game_over(); }
 if ("gameStarted" in data&&data.gameStarted) {gameStarted=true; do_game_started(); }
 if ("playerPos" in data) { playerPos=data.playerPos; set_round_label(); }
 if ("roundNum" in data) { roundNum=data.roundNum; set_round_label(); }
 if ("log" in data) { serverLog=data.log; }
+if ("gameOver" in data&&data.gameOver) { gameOver=true; do_game_over(); }
 } } } }; }
 
 function outOfRoom() {
