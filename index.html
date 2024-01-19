@@ -246,7 +246,7 @@ document.getElementById("join-leave").innerHTML="Join";
 document.getElementById("start-make_turn").innerHTML="Start";
 document.getElementById("log_fwd").disabled=true;
 document.getElementById("log_rev").disabled=true;
-init_vars(); remove_field(); mylog(""); remove_players(); }
+init_vars(); remove_field(); setTimeout("mylog(\"\")", 2000); remove_players(); }
 
 function intoRoom() {
 document.getElementById("field_submit").disabled=false;
