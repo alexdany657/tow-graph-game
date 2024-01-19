@@ -40,7 +40,9 @@ if (rooms[key].roundNum==rooms[key].roundMax) rooms[key].gameOver=true; sendRoom
 
 server.on("connection", function(client) {
 var client_key=null,client_name="";
-client.on("close", function() {
+client.isAlive=true;
+client.on("pong",function() { this.isAlive=true; });
+client.on("close",function() {
 leaveRoom(client,client_key,client_name); client_key=null; client_name=""; });
 client.on("message", function(message) {
 message=message+"";
@@ -123,3 +125,8 @@ if (rooms[key].gameStarted) { sendMessage(client,"error Game already started!");
 rooms[key].gameStarted=true; nextTurn(key); return; }
 sendMessage(client,"error Unrecognized command!");
 }); });
+
+var interval=setInterval(function() {server.clients.forEach(function(ws) { if (!ws.isAlive) return ws.terminate();
+ws.isAlive=false; ws.ping(); })},30000);
+
+server.on("close",function() { clearInterval(interval); })
