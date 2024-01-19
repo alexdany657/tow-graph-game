@@ -102,7 +102,11 @@ mylog("Game is over! <span style=\"background-color: "+col+"; padding: 3px;\">"+
 console.log(log); }
 
 function do_game_started() {
-document.getElementById("start-make_turn").innerHTML="Make turn"; }
+document.getElementById("start-make_turn").innerHTML="Make turn";
+document.getElementById("field_submit").disabled=true; }
+
+function remove_field() {
+var g=document.getElementById("all"),svg=document.getElementById("svg"); svg.removeChild(g); }
 
 function draw_field(dontSend) {
 if (!__update) return;
