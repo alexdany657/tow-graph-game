@@ -9,7 +9,7 @@ var ns="http://www.w3.org/2000/svg";
 var xlink_ns="http://www.w3.org/1999/xlink";
 var ws=null;
 var U=1, WIDTH=600, HEIGHT=600, O=20;
-var moveVrt=null,oldMsg="",playerPos=-1,roundNum=0,log="",gameOver=false,serverLog="",logPos=0;
+var moveVrt=null,oldMsg="",playerPos=-1,roundNum=0,log="",gameOver=false,serverLog="",logPos=0,key=null;
 var N,K,M,edges,vertices,winning,players,colors,startVrt,p;
 var arrowPath="M-40 -13.68103C-27.45514 -7.07703 -13.96103 -2.46170 0 0C-13.96103 2.46170 -27.45514 7.07703 -40 13.68103L-20 0Z";
 var ye='#FF0',dye='#440',
@@ -36,10 +36,8 @@ s.innerHTML="__loaded=true; "+str; s.setAttribute("language","javascript");
 document.head.appendChild(s); while (!__loaded); document.head.removeChild(s); } */
 
 function init() {
-var svg=document.getElementById("svg");
-svg.setAttribute("viewBox", "0 0 "+WIDTH+" "+HEIGHT);
-svg.style.width=WIDTH+"px";
-svg.style.height=HEIGHT+"px"; }
+var svg=document.getElementById("svg"); svg.setAttribute("viewBox", "0 0 "+WIDTH+" "+HEIGHT);
+svg.style.width=WIDTH+"px"; svg.style.height=HEIGHT+"px"; connect(); }
 
 function myalert(smth,color) {
 if (typeof(color)=="undefined") color="red";
@@ -187,8 +185,8 @@ function connect() {
 if (ws!=null) {console.debug(ws); myalert("Already connected!"); return; }
 ws=new WebSocket("ws://localhost:5705","tow-graph");
 ws.onclose=function(event) { console.debug(event); myalert("Connection closed with code "+event.code+
-" and reason "+event.reason+"!"); ws=null; };
-ws.onerror=function(event) { console.debug(event); myalert("Connection error: "+event+"!"); ws=null; };
+" and reason "+event.reason+"!"); ws=null; connect(); };
+ws.onerror=function(event) { console.debug(event); myalert("Connection error: "+event+"!"); ws=null; connect(); };
 ws.onopen=function(event) { console.debug(event); myalert("Successfully connected!",dgre); };
 ws.onmessage=function(event) {
 console.debug(event);
@@ -221,20 +219,17 @@ if (key=="roundNum") { roundNum=data.roundNum; set_round_label(); }
 if (key=="log") { serverLog=data.log; }
 } } } }; }
 
-function leave() { ws.send("leave", { binary: false, }); }
+function leave() { ws.send("leave", { binary: false, }); key=null; }
 
 function start() { ws.send("start", { binary: false, }); }
 
 function join() {
-var key=document.getElementById("key").value,name=document.getElementById("name").value;
-if (key.length==0||name.length==0) { myalert("Key and name can't be empty!"); return; }
+var _key=document.getElementById("key").value,name=document.getElementById("name").value;
+if (_key.length==0||name.length==0) { myalert("Key and name can't be empty!"); return; }
 if (ws==null) { myalert("Not connected!"); return; }
-ws.send("join "+key+" "+name, { binary: false, });
-/*if (ws!=null) { var ta=document.getElementById("field_desc");
-ws.send("update "+JSON.stringify({ fieldDesc: ta.value, roundMax: M, p: p,
-playersList: players, pos: startVrt}), { binary: false, }); }*/ }
+ws.send("join "+_key+" "+name, { binary: false, }); key=_key; }
 
-function disconnect() { if (ws!=null) leave(); setTimeout(function() { ws.close(1000); ws=null; }, 1000); }
+function disconnect() { if (ws!=null&&key!=null) leave(); setTimeout(function() { ws.close(1000); ws=null; }, 1000); }
 
 function log_rev() {
 if (logPos==0) { myalert("Already at first move!"); return; }
@@ -269,8 +264,6 @@ draw_arrow(mu(vertices[serverLog[logPos][0]],U),mu(vertices[serverLog[logPos][1]
 </select>
 <button id="field_load" onclick="load_sample()">Load example</button><br>
 <button id="field_submit" onclick="draw_field()">Create field</button><br>
-<button id="connect" onclick="connect()">Connect</button>
-<button id="disconnect" onclick="disconnect()">Disconnect</button><br>
 <input id="key" placeholder="Key"></input><br>
 <input id="name" placeholder="Name"></input><br>
 <button id="join" onclick="join()">Join</button>
