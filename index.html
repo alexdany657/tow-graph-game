@@ -86,7 +86,7 @@ function set_round_label() {
 if (playerPos==-1) mylog("Waiting for start!"); else
 mylog("Round "+(roundNum+1)+"/"+M+((roundNum==M-1)?" (final)":"")+
 ": <span style=\"background-color: "+colors[playerPos]+"; padding: 3px;\">"+players[playerPos]+"</span>'s turn");
-if (players[playerPos]==name) document.getElementById("start-make_turn").disabled=false; else
+if (gameStarted&&players[playerPos]==name) document.getElementById("start-make_turn").disabled=false; else
 document.getElementById("start-make_turn").disabled=true; }
 
 function do_game_over() {
