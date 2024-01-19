@@ -106,7 +106,7 @@ document.getElementById("start-make_turn").innerHTML="Make turn";
 document.getElementById("field_submit").disabled=true; }
 
 function remove_field() {
-var g=document.getElementById("all"),svg=document.getElementById("svg"); svg.removeChild(g); }
+var g=document.getElementById("all"),svg=document.getElementById("svg"); if (g) svg.removeChild(g); }
 
 function remove_players() {
 document.getElementById("players").innerHTML=""; }
