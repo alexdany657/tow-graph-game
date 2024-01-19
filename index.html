@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>TOW graph game</title>
 <script language="javascript">
-var __update=true;
+var __update=true,fieldCreated=false;
 var ns="http://www.w3.org/2000/svg";
 var xlink_ns="http://www.w3.org/1999/xlink";
 var ws=null;
@@ -45,7 +45,7 @@ function myalert(smth,color) {
 if (typeof(color)=="undefined") color="red";
 var announ=document.getElementById("announ"); announ.style.color=color; announ.innerHTML=smth;
 setTimeout(function (announ, smth) {if (announ.innerHTML==smth) announ.innerHTML=oldMsg; announ.style.color="black";},
-1000, announ, smth); }
+3000, announ, smth); }
 
 function mylog(smth) {
 var announ=document.getElementById("announ"); announ.style.color="black"; announ.innerHTML=smth; oldMsg=smth; }
@@ -174,7 +174,7 @@ for (var j=i+1;j<N;++j) if (edges[i][j])
 s+="M"+vertices[i][0]*U+" "+(-vertices[i][1]*U)+"L"+vertices[j][0]*U+" "+(-vertices[j][1]*U); }
 edg.setAttribute("d",s);
 if (log.length!=0) {console.log("Old log\n"+log); log=""; }
-log+=startVrt+" 1;";// roundNum=0; playerPos=-1; gameOver=false; next_turn();
+log+=startVrt+" 1;"; fieldCreated=true;
 if (ws!=null&&!dontSend) {
 ws.send("update "+JSON.stringify({ fieldDesc: ta.value, roundMax: M, p: p, playersList: players, pos: startVrt}), { binary: false, }); } }
 
@@ -206,9 +206,9 @@ var gr=succRE.exec(event.data);
 draw_arrow(mu(vertices[gr[1]],U),mu(vertices[gr[2]],U),(gr[3]==1)?dgre:dred); }
 if (roomRE.test(event.data)) {
 var data=JSON.parse(roomRE.exec(event.data)[1]);
-if (!("fieldDesc" in data&&data.fieldDesc.length==0)) {
-if ("fieldDesc" in data)
-document.getElementById("field_desc").innerHTML=data.fieldDesc; __update=true; draw_field(true);
+if (!(("fieldDesc" in data)&&(data.fieldDesc==""))&&fieldCreated) {
+if ("fieldDesc" in data) {
+document.getElementById("field_desc").innerHTML=data.fieldDesc; __update=true; draw_field(true); }
 for (key in data) {
 if (key=="p") p=+data.p;
 if (key=="players") {
@@ -216,8 +216,7 @@ for (var i=0;i<players.length;++i) {
 var fl=false;
 for (var j=0;j<data.players.length;++j)
 if (data.players[j]==players[i]) fl=true;
-document.getElementById("player"+i).style.backgroundColor=fl?colors[i]:"gray";
-} }
+document.getElementById("player"+i).style.backgroundColor=fl?colors[i]:"gray"; } }
 if (key=="pos") { startVrt=data.pos; move_hgl(startVrt); }
 if (key=="movePos"&&data.movePos!=null) { moveVrt=data.movePos;
 if (startVrt!=moveVrt&&moveVrt!=null&&startVrt!=null)
@@ -245,11 +244,11 @@ document.getElementById("join-leave").innerHTML="Leave"; }
 function leave() { outOfRoom();
 ws.send("leave", { binary: false, }); key=null; }
 
-function join() { intoRoom();
+function join() {
 var _key=document.getElementById("key").value,name=document.getElementById("name").value;
 if (_key.length==0||name.length==0) { myalert("Key and name can't be empty!"); return; }
 if (ws==null) { myalert("Not connected!"); return; }
-ws.send("join "+_key+" "+name, { binary: false, }); key=_key; }
+ws.send("join "+_key+" "+name, { binary: false, }); key=_key; intoRoom(); }
 
 function join_leave() { if (key==null) join(); else leave(); }
 
@@ -284,7 +283,7 @@ draw_arrow(mu(vertices[serverLog[logPos][0]],U),mu(vertices[serverLog[logPos][1]
 <textarea id="field_desc" cols="40" rows="24" placeholder="Field description"></textarea><br>
 <select id="select_graph">
 <option value="petersen">Petersen graph</option>
-<option value="grotzsch">Grötzsch graph</option>
+<option value="grotzsch">Gr&ouml;tzsch graph</option>
 </select>
 <button id="field_load" onclick="load_sample()">Load example</button><br>
 <button id="field_submit" onclick="draw_field()" disabled>Create field</button><br>
@@ -294,6 +293,7 @@ draw_arrow(mu(vertices[serverLog[logPos][0]],U),mu(vertices[serverLog[logPos][1]
 <button id="start-make_turn" onclick="start_makeTurn()" disabled>Start</button><br>
 <button id="log_rev" onclick="log_rev()" disabled>Previous turn</button>
 <button id="log_fwd" onclick="log_fwd()" disabled>Next turn</button><br>
+<button id="reset" onclick="disconnect()" style="background-color: red;">Reset</button><br>
 </td></tr></table>
 </body>
 </html>
