@@ -206,9 +206,10 @@ var gr=succRE.exec(event.data);
 draw_arrow(mu(vertices[gr[1]],U),mu(vertices[gr[2]],U),(gr[3]==1)?dgre:dred); }
 if (roomRE.test(event.data)) {
 var data=JSON.parse(roomRE.exec(event.data)[1]);
-if (!(("fieldDesc" in data)&&(data.fieldDesc==""))&&fieldCreated) {
+if (!(("fieldDesc" in data)&&(data.fieldDesc==""))) {
 if ("fieldDesc" in data) {
 document.getElementById("field_desc").innerHTML=data.fieldDesc; __update=true; draw_field(true); }
+if (fieldCreated) {
 for (key in data) {
 if (key=="p") p=+data.p;
 if (key=="players") {
@@ -227,7 +228,7 @@ if (key=="gameStarted"&&data.gameStarted) {gameStarted=true; do_game_started(); 
 if (key=="playerPos") { playerPos=data.playerPos; set_round_label(); }
 if (key=="roundNum") { roundNum=data.roundNum; set_round_label(); }
 if (key=="log") { serverLog=data.log; }
-} } } }; }
+} } } } }; }
 
 function outOfRoom() {
 document.getElementById("field_submit").disabled=true;
