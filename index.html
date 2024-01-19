@@ -10,6 +10,7 @@ var xlink_ns="http://www.w3.org/1999/xlink";
 var ws=null;
 var U=1, WIDTH=600, HEIGHT=600, O=20;
 var moveVrt=null,oldMsg="",playerPos=-1,roundNum=0,log="",gameOver=false,serverLog="",logPos=0;
+var N,K,M,edges,vertices,winning,players,colors,startVrt,p;
 var arrowPath="M-40 -13.68103C-27.45514 -7.07703 -13.96103 -2.46170 0 0C-13.96103 2.46170 -27.45514 7.07703 -40 13.68103L-20 0Z";
 var ye='#FF0',dye='#440',
 red='#F00',dred='#800',
@@ -29,10 +30,10 @@ function uv(a) { return mu(a,1/Math.sqrt(a[0]*a[0]+a[1]*a[1])); }
 function mu(a,k) {return [a[0]*k,a[1]*k]; }
 function ang(a) {return Math.atan2(a[1],a[0])/Math.PI*180; }
 
-function exec(str) {
-var s=document.createElement("script"); __loaded=false;
+function exec(str) { eval(str); }
+/* var s=document.createElement("script"); __loaded=false;
 s.innerHTML="__loaded=true; "+str; s.setAttribute("language","javascript");
-document.head.appendChild(s); while (!__loaded); document.head.removeChild(s); }
+document.head.appendChild(s); while (!__loaded); document.head.removeChild(s); } */
 
 function init() {
 var svg=document.getElementById("svg");
@@ -55,8 +56,8 @@ var announ=document.getElementById("announ"); announ.innerHTML+=smth; oldMsg=ann
 function load_sample() {
 var sg=document.getElementById("select_graph"),ta=document.getElementById("field_desc");
 if (sg.value=="petersen")
-ta.value="var N=10, edges=new Array(\n[0, 1, 0, 0, 1, 1, 0, 0, 0, 0],\n[1, 0, 1, 0, 0, 0, 1, 0, 0, 0],\n[0, 1, 0, 1, 0, 0, 0, 1, 0, 0],\n[0, 0, 1, 0, 1, 0, 0, 0, 1, 0],\n[1, 0, 0, 1, 0, 0, 0, 0, 0, 1],\n[1, 0, 0, 0, 0, 0, 0, 1, 1, 0],\n[0, 1, 0, 0, 0, 0, 0, 0, 1, 1],\n[0, 0, 1, 0, 0, 1, 0, 0, 0, 1],\n[0, 0, 0, 1, 0, 1, 1, 0, 0, 0],\n[0, 0, 0, 0, 1, 0, 1, 1, 0, 0],\n);\n\nvar vertices=new Array();\nfor (var i=0;i<10;++i) vertices[i]=[(1.7-(i-i%5)/5)*Math.cos(Math.PI/2+2*Math.PI/5*(i%5)),(1.7-(i-i%5)/5)*Math.sin(Math.PI/2+2*Math.PI/5*(i%5))];\n\nvar K=3;\nvar winning=new Array(\n[0, 0, 0, 0, 1, 0, 1, 0, 0, 0],\n[0, 0, 1, 0, 0, 0, 0, 1, 0, 0],\n[1, 1, 0, 0, 0, 0, 0, 0, 0, 0],\n);\nvar players=new Array(\n\"Lesha\",\n\"Vanya\",\n\"Sasha\",\n);\nvar colors=new Array(\n\"#f7a\",\n\"#4d4\",\n\"#3bf\",\n);\n\nvar startVrt=5;\nM=10;\np=0.5;"; else
-ta.value="var N=11, edges=new Array(\n[0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0,],\n[0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0,],\n[1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0,],\n[1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0,],\n[0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0,],\n[0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1,],\n[0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1,],\n[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1,],\n[1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1,],\n[0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1,],\n[0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0,]\n);\n\nvar vertices=new Array();\nfor (var i=0;i<10;++i) vertices[i]=[(2.5-(i-i%5)/5)*Math.cos((i>=5?Math.PI:0)+Math.PI/2+2*Math.PI/5*(i%5)),(2.5-(i-i%5)/5)*Math.sin((i>=5?Math.PI:0)+Math.PI/2+2*Math.PI/5*(i%5))];\nvertices[10]=[0,0];\n\nvar K=3;\nvar winning=new Array(\n[0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],\n[0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0],\n[1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],\n);\nvar players=new Array(\n\"Lesha\",\n\"Vanya\",\n\"Sasha\",\n);\nvar colors=new Array(\n\"#f7a\",\n\"#4d4\",\n\"#3bf\",\n);\n\nvar startVrt=5;\nM=10;\np=0.5;"; }
+ta.value="N=10;\nedges=new Array(\n[0, 1, 0, 0, 1, 1, 0, 0, 0, 0],\n[1, 0, 1, 0, 0, 0, 1, 0, 0, 0],\n[0, 1, 0, 1, 0, 0, 0, 1, 0, 0],\n[0, 0, 1, 0, 1, 0, 0, 0, 1, 0],\n[1, 0, 0, 1, 0, 0, 0, 0, 0, 1],\n[1, 0, 0, 0, 0, 0, 0, 1, 1, 0],\n[0, 1, 0, 0, 0, 0, 0, 0, 1, 1],\n[0, 0, 1, 0, 0, 1, 0, 0, 0, 1],\n[0, 0, 0, 1, 0, 1, 1, 0, 0, 0],\n[0, 0, 0, 0, 1, 0, 1, 1, 0, 0],\n);\n\nvertices=new Array();\nfor (var i=0;i<10;++i) vertices[i]=[(1.7-(i-i%5)/5)*Math.cos(Math.PI/2+2*Math.PI/5*(i%5)),(1.7-(i-i%5)/5)*Math.sin(Math.PI/2+2*Math.PI/5*(i%5))];\n\nK=3;\nwinning=new Array(\n[0, 0, 0, 0, 1, 0, 1, 0, 0, 0],\n[0, 0, 1, 0, 0, 0, 0, 1, 0, 0],\n[1, 1, 0, 0, 0, 0, 0, 0, 0, 0],\n);\nplayers=new Array(\n\"Lesha\",\n\"Vanya\",\n\"Sasha\",\n);\ncolors=new Array(\n\"#f7a\",\n\"#4d4\",\n\"#3bf\",\n);\n\nstartVrt=5;\nM=10;\np=0.5;"; else
+ta.value="N=11;\nedges=new Array(\n[0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0,],\n[0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0,],\n[1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0,],\n[1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0,],\n[0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0,],\n[0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1,],\n[0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1,],\n[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1,],\n[1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1,],\n[0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1,],\n[0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0,]\n);\n\nvertices=new Array();\nfor (var i=0;i<10;++i) vertices[i]=[(2.5-(i-i%5)/5)*Math.cos((i>=5?Math.PI:0)+Math.PI/2+2*Math.PI/5*(i%5)),(2.5-(i-i%5)/5)*Math.sin((i>=5?Math.PI:0)+Math.PI/2+2*Math.PI/5*(i%5))];\nvertices[10]=[0,0];\n\nK=3;\nwinning=new Array(\n[0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],\n[0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0],\n[1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],\n);\nplayers=new Array(\n\"Lesha\",\n\"Vanya\",\n\"Sasha\",\n);\ncolors=new Array(\n\"#f7a\",\n\"#4d4\",\n\"#3bf\",\n);\n\nstartVrt=5;\nM=10;\np=0.5;"; }
 
 function draw_arrow(p1,p2,color) {
 if (!p1||!p2) return;
@@ -81,23 +82,13 @@ var hgl=document.getElementById("hglu");
 hgl.setAttribute("transform","translate("+vertices[vrt][0]*U+" "+(-vertices[vrt][1]*U)+")"+
 "scale("+1.8*O+" "+1.8*O+")"); }
 
-/*
-function next_turn() {
-playerPos++; if (playerPos==K) { playerPos=0; roundNum++; }
-if (roundNum<M) mylog("Round "+(roundNum+1)+"/"+M+((roundNum==M-1)?" (final)":"")+
-": <span style=\"background-color: "+colors[playerPos]+"; padding: 3px;\">"+players[playerPos]+"</span>'s turn");
-else { var winner="Nobody",col="black"; gameOver=true;
-for (var i=0;i<K;++i) if (winning[i][startVrt]) { winner=players[i]; col=colors[i]; break; }
-mylog("Game is over! <span style=\"background-color: "+col+"; padding: 3px;\">"+winner+"</span> won!");
-console.log(log); } } */
-
 function set_round_label() {
 if (playerPos==-1) mylog("Waiting for start!"); else
 mylog("Round "+(roundNum+1)+"/"+M+((roundNum==M-1)?" (final)":"")+
 ": <span style=\"background-color: "+colors[playerPos]+"; padding: 3px;\">"+players[playerPos]+"</span>'s turn"); }
 
 function do_game_over() {
-var winner="Nobody",col="black"; gameOver=true; __update=false;
+var winner="Nobody",col="gray"; gameOver=true; __update=false;
 setTimeout(function () {
 mylog_append("<br>Showing game log, turn <span id=\"turnno\">"+((logPos-logPos%K)/K+1)+
 "</span> of <span id=\"logplayer\" style=\"padding: 3px; background-color: "+colors[logPos%K]+
@@ -183,16 +174,6 @@ if (log.length!=0) {console.log("Old log\n"+log); log=""; }
 log+=startVrt+" 1;";// roundNum=0; playerPos=-1; gameOver=false; next_turn();
 if (ws!=null&&!dontSend) {
 ws.send("update "+JSON.stringify({ fieldDesc: ta.value, roundMax: M, p: p, playersList: players, pos: startVrt}), { binary: false, }); } }
-
-/*
-function make_turn() {
-console.debug("startVrt,moveVrt,gameOver,playerPos,roundNum\n",startVrt,moveVrt,gameOver,playerPos,roundNum);
-if (gameOver) { myalert("Game is over!"); return; }
-if (moveVrt==null) { myalert("You must choose a vertex!"); return; }
-if (edges[startVrt][moveVrt]==0) { myalert("There must be an edge between chosen vertices!"); return; }
-var val=Math.random(); console.log(startVrt,moveVrt,val); log+=moveVrt+" "+((val<p)?1:0)+";";
-draw_arrow(mu(vertices[startVrt],U),mu(vertices[moveVrt],U),(val<p)?dgre:dred); startVrt=(val<p)?moveVrt:startVrt;
-moveVrt=null; if (val<p) move_hgl(moveVrt); next_turn(); } */
 
 function make_turn() {
 console.debug("startVrt,moveVrt,gameOver,playerPos,roundNum\n",startVrt,moveVrt,gameOver,playerPos,roundNum);
