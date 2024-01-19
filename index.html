@@ -209,7 +209,8 @@ ws.onerror=function(event) { console.debug(event); myalert("Connection error: "+
 ws.onopen=function(event) { console.debug(event); myalert("Successfully connected!",dgre); };
 ws.onmessage=function(event) {
 console.debug(event);
-if (errorRE.test(event.data)) myalert(errorRE.exec(event.data)[1]);
+if (errorRE.test(event.data)) { var err=errorRE.exec(event.data)[1]; myalert(err);
+if (err=="Name already used!") { key=null; name=""; outOfRoom(); } };
 if (succRE.test(event.data)) {
 var gr=succRE.exec(event.data);
 draw_arrow(mu(vertices[gr[1]],U),mu(vertices[gr[2]],U),(gr[3]==1)?dgre:dred); }
