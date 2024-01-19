@@ -108,6 +108,9 @@ document.getElementById("field_submit").disabled=true; }
 function remove_field() {
 var g=document.getElementById("all"),svg=document.getElementById("svg"); svg.removeChild(g); }
 
+function remove_players() {
+document.getElementById("players").innerHTML=""; }
+
 function draw_field(dontSend) {
 if (!__update) return;
 if (ws==null) { myalert("Not connected!"); return; }
@@ -145,7 +148,7 @@ myalert("Incorrect number of elements in winning array at position "+i+": "+winn
 }
 if (!isFinite(startVrt)||startVrt<0||startVrt>=N) { myalert("Bad starting vertex: "+startVrt+"!"); return; }
 U=Math.min(WIDTH*0.8/(maxX-minX),HEIGHT*0.8/(maxY-minY));
-var g=document.getElementById("all"),svg=document.getElementById("svg"); svg.removeChild(g);
+var g=document.getElementById("all"),svg=document.getElementById("svg"); if (g) svg.removeChild(g);
 g=document.createElementNS(ns,"g"); g.id="all"; g.setAttribute("transform","translate("+WIDTH/2+" "+HEIGHT/2+")")
 var ge=document.createElementNS(ns,"g"),ga=document.createElementNS(ns,"g"),gv=document.createElementNS(ns,"g");
 ge.id="gedg"; ga.id="gall"; gv.id="gver"; svg.appendChild(g); g.appendChild(ge); g.appendChild(ga); g.appendChild(gv);
@@ -243,7 +246,7 @@ document.getElementById("join-leave").innerHTML="Join";
 document.getElementById("start-make_turn").innerHTML="Start";
 document.getElementById("log_fwd").disabled=true;
 document.getElementById("log_rev").disabled=true;
-init_vars(); remove_field(); mylog(""); }
+init_vars(); remove_field(); mylog(""); remove_players(); }
 
 function intoRoom() {
 document.getElementById("field_submit").disabled=false;
