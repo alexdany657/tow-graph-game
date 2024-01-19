@@ -1,0 +1,175 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TOW graph game</title>
+<script language="javascript">
+var __loaded=false;
+var ns="http://www.w3.org/2000/svg";
+var xlink_ns="http://www.w3.org/1999/xlink";
+var U=1, WIDTH=600, HEIGHT=600, O=20;
+var moveVrt=null,oldMsg="",playerPos=-1,roundNum=0,log="",gameOver=false;
+var arrowPath="M-40 -13.68103C-27.45514 -7.07703 -13.96103 -2.46170 0 0C-13.96103 2.46170 -27.45514 7.07703 -40 13.68103L-20 0Z";
+var ye='#FF0',dye='#440',
+red='#F00',dred='#800',
+gre='#2F2',dgre='#181',
+cy='#2AF',dcy='#158',
+ma='#F4F',dma='#828',
+bl='#08F',dbl='#048',
+fiol='#80F',dfiol='#408',
+ora='#F80',dora='#840';
+
+function sm(a,b) { return [a[0]+b[0],a[1]+b[1]]; }
+function sb(a,b) { return [a[0]-b[0],a[1]-b[1]]; }
+function uv(a) { return mu(a,1/Math.sqrt(a[0]*a[0]+a[1]*a[1])); }
+function mu(a,k) {return [a[0]*k,a[1]*k]; }
+function ang(a) {return Math.atan2(a[1],a[0])/Math.PI*180; }
+
+function init() {
+var svg=document.getElementById("svg");
+svg.setAttribute("viewBox", "0 0 "+WIDTH+" "+HEIGHT);
+svg.style.width=WIDTH+"px";
+svg.style.height=HEIGHT+"px"; }
+
+function myalert(smth) {
+var announ=document.getElementById("announ"); announ.style.color="red"; announ.innerHTML=smth;
+setTimeout(function (announ, smth) {if (announ.innerHTML==smth) announ.innerHTML=oldMsg; announ.style.color="black";},
+1000, announ, smth);
+}
+
+function mylog(smth) {
+var announ=document.getElementById("announ"); announ.style.color="black"; announ.innerHTML=smth; oldMsg=smth;
+}
+
+function load_sample() {
+var ta=document.getElementById("field_desc");
+ta.value="var N=10, edges=new Array(\n[0, 1, 0, 0, 1, 1, 0, 0, 0, 0],\n[1, 0, 1, 0, 0, 0, 1, 0, 0, 0],\n[0, 1, 0, 1, 0, 0, 0, 1, 0, 0],\n[0, 0, 1, 0, 1, 0, 0, 0, 1, 0],\n[1, 0, 0, 1, 0, 0, 0, 0, 0, 1],\n[1, 0, 0, 0, 0, 0, 0, 1, 1, 0],\n[0, 1, 0, 0, 0, 0, 0, 0, 1, 1],\n[0, 0, 1, 0, 0, 1, 0, 0, 0, 1],\n[0, 0, 0, 1, 0, 1, 1, 0, 0, 0],\n[0, 0, 0, 0, 1, 0, 1, 1, 0, 0],\n);\n\nvar vertices=new Array();\nfor (var i=0;i<10;++i) vertices[i]=[(1.7-(i-i%5)/5)*Math.cos(Math.PI/2+2*Math.PI/5*(i%5)),(1.7-(i-i%5)/5)*Math.sin(Math.PI/2+2*Math.PI/5*(i%5))];\n\nvar K=3;\nvar winning=new Array(\n[0, 0, 0, 0, 1, 0, 1, 0, 0, 0],\n[0, 0, 1, 0, 0, 0, 0, 1, 0, 0],\n[1, 1, 0, 0, 0, 0, 0, 0, 0, 0],\n);\nvar players=new Array(\n\"Lesha\",\n\"Vanya\",\n\"Sasha\",\n);\nvar colors=new Array(\n\"#f7a\",\n\"#4d4\",\n\"#3bf\",\n);\n\nvar startVrt=5;\nM=10;\np=0.5;"; }
+
+function draw_arrow(p1,p2,color) {
+if (!p1||!p2) return;
+var arrh=document.getElementById("arrh"),arrb=document.getElementById("arrb"),gall=document.getElementById("gall");
+if (arrh) gall.removeChild(arrh); if (arrb) gall.removeChild(arrb);
+arrh=document.createElementNS(ns,"path"); arrb=document.createElementNS(ns,"path"); arrh.id="arrh"; arrb.id="arrb";
+var pp1=sb(p1,mu(uv(sb(p1,p2)),O+.75*Math.PI+Math.E/2)); var pp2=sb(p2,mu(uv(sb(p2,p1)),O+.75*Math.PI+Math.E/2));
+arrb.setAttribute("d","M"+pp1[0]+" "+(-pp1[1])+"L"+pp2[0]+" "+(-pp2[1])); arrh.setAttribute("d",arrowPath);
+arrb.style.strokeLinejoin="round"; arrb.style.strokeLinecap="round";
+arrh.style.strokeLinejoin="round"; arrh.style.strokeLinecap="round";
+arrb.style.strokeWidth=1.5*Math.PI+"px"; arrb.style.fill="none"; arrb.style.stroke=color;
+arrh.style.strokeWidth=1.5*Math.PI/0.75+"px"; arrh.style.fill=color; arrh.style.stroke=color;
+arrh.setAttribute("transform","translate("+pp2[0]+" "+(-pp2[1])+")rotate("+(-ang(sb(p2,p1)))+")scale(.75)");
+gall.appendChild(arrh); gall.appendChild(arrb); }
+
+function move_hgl() {
+var hgl=document.getElementById("hglu");
+hgl.setAttribute("transform","translate("+vertices[startVrt][0]*U+" "+(-vertices[startVrt][1]*U)+")"+
+"scale("+1.8*O+" "+1.8*O+")"); }
+
+function next_turn() {
+playerPos++; if (playerPos==K) { playerPos=0; roundNum++; }
+if (roundNum<M) mylog("Round "+(roundNum+1)+"/"+M+((roundNum==M-1)?" (final)":"")+
+": <span style=\"color: "+colors[playerPos]+";\">"+players[playerPos]+"</span>'s turn");
+else { var winner="Nobody",col="black"; gameOver=true;
+for (var i=0;i<K;++i) if (winning[i][startVrt]) { winner=players[i]; col=colors[i]; break; }
+mylog("Game is over! <span style=\"color: "+col+";\">"+winner+"</span> won!"); console.log(log); } }
+
+function draw_field() {
+__loaded=false;
+var minX,minY,maxX,maxY;
+var s=document.createElement("script"),ta=document.getElementById("field_desc"),svg=document.getElementById("svg");
+s.innerHTML="__loaded=true; "+ta.value; s.setAttribute("language","javascript");
+document.head.appendChild(s);
+while (!__loaded);
+if (typeof(N)=="undefined"||typeof(K)=="undefined"||typeof(startVrt)=="undefined") {
+myalert("N, K, and startVrt must be specified!"); return; }
+N=+N; K=+K; startVrt=+startVrt;
+if (!isFinite(N)) { myalert("N must be the number of vertices in a graph!"); return; }
+if (N<=0) { myalert("Number of vertices in graph (N) must be positive!"); return; }
+if (edges.length!=N) { myalert("Incorrect edges: wrong number of entries: "+edges.length+"!"); return; }
+if (vertices.length!=N) { myalert("Incorrect number of vertices: "+vertices.length+"!"); return; }
+minX=vertices[0][0];
+maxX=vertices[0][0];
+minY=vertices[0][1];
+maxY=vertices[0][1];
+for (var i=0;i<N;++i) {
+if (edges[i].length!=N) { myalert("Incorrect edges: wrong number of entries ("+edges[i].length+") for "+i+" row!");
+return; }
+if (vertices[i].length!=2) { myalert("Incorrect number of elements for vertex "+i+": "+vertices[i].length); return; }
+minX=Math.min(minX,vertices[i][0]); maxX=Math.max(maxX,vertices[i][0]);
+minY=Math.min(minY,vertices[i][1]); maxY=Math.max(maxY,vertices[i][1]); }
+if (!isFinite(K)) { myalert("K must be a number of players!"); return; }
+if (K<=1) { myalert("Number of players must be at least 2!"); return; }
+if (winning.length!=K) { myalert("Incorrect number of entries in winning array: "+winning.length+"!"); return; }
+if (players.length!=K) { myalert("Incorrect number of entries in players array: "+players.length+"!"); return; }
+if (colors.length!=K) { myalert("Incorrect number of entries in colors array: "+colors.length+"!"); return; }
+var tr=document.getElementById("players"); tr.innerHTML="";
+for (var i=0;i<K;++i) {
+tr.innerHTML+="<td><span style=\"color: "+colors[i]+";\">"+players[i]+"</span></td>";
+if (winning[i].length!=N) {
+myalert("Incorrect number of elements in winning array at position "+i+": "+winning[i].length+"!"); return; }
+}
+if (!isFinite(startVrt)||startVrt<0||startVrt>=N) { myalert("Bad starting vertex: "+startVrt+"!"); return; }
+U=Math.min(WIDTH*0.8/(maxX-minX),HEIGHT*0.8/(maxY-minY));
+var g=document.getElementById("all"),svg=document.getElementById("svg"); svg.removeChild(g);
+g=document.createElementNS(ns,"g"); g.id="all"; g.setAttribute("transform","translate("+WIDTH/2+" "+HEIGHT/2+")")
+var ge=document.createElementNS(ns,"g"),ga=document.createElementNS(ns,"g"),gv=document.createElementNS(ns,"g");
+ge.id="gedg"; ga.id="gall"; gv.id="gver"; svg.appendChild(g); g.appendChild(ge); g.appendChild(ga); g.appendChild(gv);
+var hgl=document.createElementNS(ns,"use");
+hgl.id="hglu"; hgl.setAttributeNS(xlink_ns,"xlink:href","#hgl");
+hgl.setAttribute("transform","translate("+vertices[startVrt][0]*U+" "+(-vertices[startVrt][1]*U)+")"+
+"scale("+1.8*O+" "+1.8*O+")");
+var edg=document.createElementNS(ns,"path");
+edg.id="edg"; edg.style.fill="none"; edg.style.stroke="black"; edg.style.strokeWidth=Math.E+"px";
+ge.appendChild(hgl); ge.appendChild(edg);
+var s="";
+for (var i=0;i<N;++i) {
+var col="white";
+for (var j=0;j<K;++j) if (winning[j][i]==1) col=colors[j];
+var o=document.createElementNS(ns,"circle");
+o.id="v"+i; o.style.strokeWidth=Math.E+"px"; o.style.stroke="none"; o.style.fill=col;
+o.setAttribute("r",""+O); o.setAttribute("cx",vertices[i][0]*U+""); o.setAttribute("cy",-vertices[i][1]*U+"");
+var t=document.createElementNS(ns,"text"); t.id="t"+i;
+t.style.fontSize=20+"px"; t.style.fontFamily="sans-serif"; t.style.fill="black"; t.style.fontWeight="bold";
+t.innerHTML=i+""; t.style.textAnchor="middle"; t.style.dominantBaseline="central";
+t.setAttribute("x",o.getAttribute("cx")); t.setAttribute("y",o.getAttribute("cy"));
+var pho=document.createElementNS(ns,"circle"); pho.id="phv"+i;
+pho.style.strokeWidth=Math.E+"px"; pho.style.stroke="black"; pho.style.fill="white"; pho.style.fillOpacity="0";
+pho.style.cursor="pointer";
+pho.onclick=function() { moveVrt=+this.id.substring(3);
+draw_arrow(mu(vertices[startVrt],U),mu(vertices[moveVrt],U),(edges[startVrt][moveVrt]==1)?"gray":dred); }
+pho.setAttribute("r",""+O); pho.setAttribute("cx",vertices[i][0]*U+""); pho.setAttribute("cy",-vertices[i][1]*U+"");
+gv.appendChild(o); gv.appendChild(t); gv.appendChild(pho);
+for (var j=i+1;j<N;++j) if (edges[i][j])
+s+="M"+vertices[i][0]*U+" "+(-vertices[i][1]*U)+"L"+vertices[j][0]*U+" "+(-vertices[j][1]*U); }
+edg.setAttribute("d",s);
+if (log.length!=0) {console.log("Old log\n"+log); log=""; }
+log+=startVrt+" 1;"; roundNum=0; playerPos=-1; gameOver=false; next_turn();
+}
+
+function make_turn() {
+console.debug("startVrt,moveVrt,gameOver,playerPos,roundNum\n",startVrt,moveVrt,gameOver,playerPos,roundNum);
+if (gameOver) { myalert("Game is over!"); return; }
+if (moveVrt==null) { myalert("You must choose a vertex!"); return; }
+if (edges[startVrt][moveVrt]==0) { myalert("There must be an edge between chosen vertices!"); return; }
+var val=Math.random(); console.log(startVrt,moveVrt,val); log+=moveVrt+" "+((val<p)?1:0)+";";
+draw_arrow(mu(vertices[startVrt],U),mu(vertices[moveVrt],U),(val<p)?dgre:dred); startVrt=(val<p)?moveVrt:startVrt;
+moveVrt=null; if (val<p) move_hgl(moveVrt); next_turn(); }
+</script>
+</head>
+<body onload="init()">
+<table><tr><td>
+<svg id="svg" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1 1" style="width: 1px; height: 1px; border: 2.71828px solid black;"><defs>
+<radialGradient id="grad"><stop offset=".5" stop-color="#fff"/><stop offset="1" stop-color="#cc0"/></radialGradient>
+<g id="hgl"><circle r="1" fill="url('#grad')" stroke="none"/></g></defs>
+<g id="all"></g></svg><br>
+<table style="width: 100%; text-align: center; font-family: sans-serif; font-weight: bold;"><tr id="players">
+</tr></table>
+<p style="text-align: center; font-family: sans-serif; font-weight: bold;"><span id="announ"></span></p>
+</td>
+<td style="vertical-align: top;">
+<textarea id="field_desc" cols="80" rows="24" placeholder="Field description"></textarea><br>
+<button id="field_submit" onclick="draw_field()">Create field</button>
+<button id="field_load" onclick="load_sample()">Load example</button>
+<button id="make_turn" onclick="make_turn()">Make turn</button>
+</td></tr></table>
+</body>
+</html>

@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <title>TOW graph game</title>
 <script language="javascript">
-var __loaded=false;
+var __loaded=false,__update=true;
 var ns="http://www.w3.org/2000/svg";
 var xlink_ns="http://www.w3.org/1999/xlink";
+var ws=null;
 var U=1, WIDTH=600, HEIGHT=600, O=20;
-var moveVrt=null,oldMsg="",playerPos=-1,roundNum=0,log="",gameOver=false;
+var moveVrt=null,oldMsg="",playerPos=-1,roundNum=0,log="",gameOver=false,serverLog="",logPos=0;
 var arrowPath="M-40 -13.68103C-27.45514 -7.07703 -13.96103 -2.46170 0 0C-13.96103 2.46170 -27.45514 7.07703 -40 13.68103L-20 0Z";
 var ye='#FF0',dye='#440',
 red='#F00',dred='#800',
@@ -19,11 +20,19 @@ bl='#08F',dbl='#048',
 fiol='#80F',dfiol='#408',
 ora='#F80',dora='#840';
 
+var roomRE=/^room (?<data>.+)$/,errorRE=/^error (?<msg>.+)$/,
+succRE=/^succ (?<pos>[0-9]+) (?<movePos>[0-9]+) (?<suc>0|1)$/;
+
 function sm(a,b) { return [a[0]+b[0],a[1]+b[1]]; }
 function sb(a,b) { return [a[0]-b[0],a[1]-b[1]]; }
 function uv(a) { return mu(a,1/Math.sqrt(a[0]*a[0]+a[1]*a[1])); }
 function mu(a,k) {return [a[0]*k,a[1]*k]; }
 function ang(a) {return Math.atan2(a[1],a[0])/Math.PI*180; }
+
+function exec(str) {
+var s=document.createElement("script"); __loaded=false;
+s.innerHTML="__loaded=true; "+str; s.setAttribute("language","javascript");
+document.head.appendChild(s); while (!__loaded); document.head.removeChild(s); }
 
 function init() {
 var svg=document.getElementById("svg");
@@ -31,19 +40,23 @@ svg.setAttribute("viewBox", "0 0 "+WIDTH+" "+HEIGHT);
 svg.style.width=WIDTH+"px";
 svg.style.height=HEIGHT+"px"; }
 
-function myalert(smth) {
-var announ=document.getElementById("announ"); announ.style.color="red"; announ.innerHTML=smth;
+function myalert(smth,color) {
+if (typeof(color)=="undefined") color="red";
+var announ=document.getElementById("announ"); announ.style.color=color; announ.innerHTML=smth;
 setTimeout(function (announ, smth) {if (announ.innerHTML==smth) announ.innerHTML=oldMsg; announ.style.color="black";},
-1000, announ, smth);
-}
+1000, announ, smth); }
 
 function mylog(smth) {
-var announ=document.getElementById("announ"); announ.style.color="black"; announ.innerHTML=smth; oldMsg=smth;
-}
+var announ=document.getElementById("announ"); announ.style.color="black"; announ.innerHTML=smth; oldMsg=smth; }
+
+function mylog_append(smth) {
+var announ=document.getElementById("announ"); announ.innerHTML+=smth; oldMsg=announ.innerHTML; }
 
 function load_sample() {
-var ta=document.getElementById("field_desc");
-ta.value="var N=10, edges=new Array(\n[0, 1, 0, 0, 1, 1, 0, 0, 0, 0],\n[1, 0, 1, 0, 0, 0, 1, 0, 0, 0],\n[0, 1, 0, 1, 0, 0, 0, 1, 0, 0],\n[0, 0, 1, 0, 1, 0, 0, 0, 1, 0],\n[1, 0, 0, 1, 0, 0, 0, 0, 0, 1],\n[1, 0, 0, 0, 0, 0, 0, 1, 1, 0],\n[0, 1, 0, 0, 0, 0, 0, 0, 1, 1],\n[0, 0, 1, 0, 0, 1, 0, 0, 0, 1],\n[0, 0, 0, 1, 0, 1, 1, 0, 0, 0],\n[0, 0, 0, 0, 1, 0, 1, 1, 0, 0],\n);\n\nvar vertices=new Array();\nfor (var i=0;i<10;++i) vertices[i]=[(1.7-(i-i%5)/5)*Math.cos(Math.PI/2+2*Math.PI/5*(i%5)),(1.7-(i-i%5)/5)*Math.sin(Math.PI/2+2*Math.PI/5*(i%5))];\n\nvar K=3;\nvar winning=new Array(\n[0, 0, 0, 0, 1, 0, 1, 0, 0, 0],\n[0, 0, 1, 0, 0, 0, 0, 1, 0, 0],\n[1, 1, 0, 0, 0, 0, 0, 0, 0, 0],\n);\nvar players=new Array(\n\"Lesha\",\n\"Vanya\",\n\"Sasha\",\n);\nvar colors=new Array(\n\"#f7a\",\n\"#4d4\",\n\"#3bf\",\n);\n\nvar startVrt=5;\nM=10;\np=0.5;"; }
+var sg=document.getElementById("select_graph"),ta=document.getElementById("field_desc");
+if (sg.value=="petersen")
+ta.value="var N=10, edges=new Array(\n[0, 1, 0, 0, 1, 1, 0, 0, 0, 0],\n[1, 0, 1, 0, 0, 0, 1, 0, 0, 0],\n[0, 1, 0, 1, 0, 0, 0, 1, 0, 0],\n[0, 0, 1, 0, 1, 0, 0, 0, 1, 0],\n[1, 0, 0, 1, 0, 0, 0, 0, 0, 1],\n[1, 0, 0, 0, 0, 0, 0, 1, 1, 0],\n[0, 1, 0, 0, 0, 0, 0, 0, 1, 1],\n[0, 0, 1, 0, 0, 1, 0, 0, 0, 1],\n[0, 0, 0, 1, 0, 1, 1, 0, 0, 0],\n[0, 0, 0, 0, 1, 0, 1, 1, 0, 0],\n);\n\nvar vertices=new Array();\nfor (var i=0;i<10;++i) vertices[i]=[(1.7-(i-i%5)/5)*Math.cos(Math.PI/2+2*Math.PI/5*(i%5)),(1.7-(i-i%5)/5)*Math.sin(Math.PI/2+2*Math.PI/5*(i%5))];\n\nvar K=3;\nvar winning=new Array(\n[0, 0, 0, 0, 1, 0, 1, 0, 0, 0],\n[0, 0, 1, 0, 0, 0, 0, 1, 0, 0],\n[1, 1, 0, 0, 0, 0, 0, 0, 0, 0],\n);\nvar players=new Array(\n\"Lesha\",\n\"Vanya\",\n\"Sasha\",\n);\nvar colors=new Array(\n\"#f7a\",\n\"#4d4\",\n\"#3bf\",\n);\n\nvar startVrt=5;\nM=10;\np=0.5;"; else
+ta.value="var N=11, edges=new Array(\n[0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0,],\n[0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0,],\n[1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0,],\n[1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0,],\n[0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0,],\n[0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1,],\n[0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1,],\n[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1,],\n[1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1,],\n[0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1,],\n[0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0,]\n);\n\nvar vertices=new Array();\nfor (var i=0;i<10;++i) vertices[i]=[(2.5-(i-i%5)/5)*Math.cos((i>=5?Math.PI:0)+Math.PI/2+2*Math.PI/5*(i%5)),(2.5-(i-i%5)/5)*Math.sin((i>=5?Math.PI:0)+Math.PI/2+2*Math.PI/5*(i%5))];\nvertices[10]=[0,0];\n\nvar K=3;\nvar winning=new Array(\n[0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],\n[0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0],\n[1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],\n);\nvar players=new Array(\n\"Lesha\",\n\"Vanya\",\n\"Sasha\",\n);\nvar colors=new Array(\n\"#f7a\",\n\"#4d4\",\n\"#3bf\",\n);\n\nvar startVrt=5;\nM=10;\np=0.5;"; }
 
 function draw_arrow(p1,p2,color) {
 if (!p1||!p2) return;
@@ -59,26 +72,48 @@ arrh.style.strokeWidth=1.5*Math.PI/0.75+"px"; arrh.style.fill=color; arrh.style.
 arrh.setAttribute("transform","translate("+pp2[0]+" "+(-pp2[1])+")rotate("+(-ang(sb(p2,p1)))+")scale(.75)");
 gall.appendChild(arrh); gall.appendChild(arrb); }
 
-function move_hgl() {
+function hide_arrow() {
+var arrh=document.getElementById("arrh"),arrb=document.getElementById("arrb"),gall=document.getElementById("gall");
+if (arrh) gall.removeChild(arrh); if (arrb) gall.removeChild(arrb); }
+
+function move_hgl(vrt) {
 var hgl=document.getElementById("hglu");
-hgl.setAttribute("transform","translate("+vertices[startVrt][0]*U+" "+(-vertices[startVrt][1]*U)+")"+
+hgl.setAttribute("transform","translate("+vertices[vrt][0]*U+" "+(-vertices[vrt][1]*U)+")"+
 "scale("+1.8*O+" "+1.8*O+")"); }
 
+/*
 function next_turn() {
 playerPos++; if (playerPos==K) { playerPos=0; roundNum++; }
 if (roundNum<M) mylog("Round "+(roundNum+1)+"/"+M+((roundNum==M-1)?" (final)":"")+
-": <span style=\"color: "+colors[playerPos]+";\">"+players[playerPos]+"</span>'s turn");
+": <span style=\"background-color: "+colors[playerPos]+"; padding: 3px;\">"+players[playerPos]+"</span>'s turn");
 else { var winner="Nobody",col="black"; gameOver=true;
 for (var i=0;i<K;++i) if (winning[i][startVrt]) { winner=players[i]; col=colors[i]; break; }
-mylog("Game is over! <span style=\"color: "+col+";\">"+winner+"</span> won!"); console.log(log); } }
+mylog("Game is over! <span style=\"background-color: "+col+"; padding: 3px;\">"+winner+"</span> won!");
+console.log(log); } } */
 
-function draw_field() {
-__loaded=false;
+function set_round_label() {
+if (playerPos==-1) mylog("Waiting for start!"); else
+mylog("Round "+(roundNum+1)+"/"+M+((roundNum==M-1)?" (final)":"")+
+": <span style=\"background-color: "+colors[playerPos]+"; padding: 3px;\">"+players[playerPos]+"</span>'s turn"); }
+
+function do_game_over() {
+var winner="Nobody",col="black"; gameOver=true; __update=false;
+setTimeout(function () {
+mylog_append("<br>Showing game log, turn <span id=\"turnno\">"+((logPos-logPos%K)/K+1)+
+"</span> of <span id=\"logplayer\" style=\"padding: 3px; background-color: "+colors[logPos%K]+
+"\">"+players[logPos%K]+"</span>.");
+document.getElementById("log_rev").disabled=false; document.getElementById("log_fwd").disabled=false; update_log(); },
+1000);
+for (var i=0;i<K;++i) if (winning[i][startVrt]) { winner=players[i]; col=colors[i]; break; }
+mylog("Game is over! <span style=\"background-color: "+col+"; padding: 3px;\">"+winner+"</span> won!");
+console.log(log); }
+
+function draw_field(dontSend) {
+if (!__update) return;
+if (ws==null) { myalert("Not connected!"); return; }
 var minX,minY,maxX,maxY;
-var s=document.createElement("script"),ta=document.getElementById("field_desc"),svg=document.getElementById("svg");
-s.innerHTML="__loaded=true; "+ta.value; s.setAttribute("language","javascript");
-document.head.appendChild(s);
-while (!__loaded);
+var ta=document.getElementById("field_desc"),svg=document.getElementById("svg");
+exec("__loaded=true; "+ta.value);
 if (typeof(N)=="undefined"||typeof(K)=="undefined"||typeof(startVrt)=="undefined") {
 myalert("N, K, and startVrt must be specified!"); return; }
 N=+N; K=+K; startVrt=+startVrt;
@@ -103,7 +138,8 @@ if (players.length!=K) { myalert("Incorrect number of entries in players array: 
 if (colors.length!=K) { myalert("Incorrect number of entries in colors array: "+colors.length+"!"); return; }
 var tr=document.getElementById("players"); tr.innerHTML="";
 for (var i=0;i<K;++i) {
-tr.innerHTML+="<td><span style=\"color: "+colors[i]+";\">"+players[i]+"</span></td>";
+tr.innerHTML+="<td><span id=\"player"+i+"\" style=\"padding: 5px; background-color: "+colors[i]+";\">"+
+players[i]+"</span></td>";
 if (winning[i].length!=N) {
 myalert("Incorrect number of elements in winning array at position "+i+": "+winning[i].length+"!"); return; }
 }
@@ -134,17 +170,21 @@ t.setAttribute("x",o.getAttribute("cx")); t.setAttribute("y",o.getAttribute("cy"
 var pho=document.createElementNS(ns,"circle"); pho.id="phv"+i;
 pho.style.strokeWidth=Math.E+"px"; pho.style.stroke="black"; pho.style.fill="white"; pho.style.fillOpacity="0";
 pho.style.cursor="pointer";
-pho.onclick=function() { moveVrt=+this.id.substring(3);
-draw_arrow(mu(vertices[startVrt],U),mu(vertices[moveVrt],U),(edges[startVrt][moveVrt]==1)?"gray":dred); }
+/*pho.onclick=function() { moveVrt=+this.id.substring(3);
+draw_arrow(mu(vertices[startVrt],U),mu(vertices[moveVrt],U),(edges[startVrt][moveVrt]==1)?"gray":dred); }*/
+pho.onclick=function() { if (ws==null) { myalert("Not connected!"); return; } moveVrt=+this.id.substring(3);
+ws.send("update "+JSON.stringify({ movePos: moveVrt, }), { binary: false, }); }
 pho.setAttribute("r",""+O); pho.setAttribute("cx",vertices[i][0]*U+""); pho.setAttribute("cy",-vertices[i][1]*U+"");
 gv.appendChild(o); gv.appendChild(t); gv.appendChild(pho);
 for (var j=i+1;j<N;++j) if (edges[i][j])
 s+="M"+vertices[i][0]*U+" "+(-vertices[i][1]*U)+"L"+vertices[j][0]*U+" "+(-vertices[j][1]*U); }
 edg.setAttribute("d",s);
 if (log.length!=0) {console.log("Old log\n"+log); log=""; }
-log+=startVrt+" 1;"; roundNum=0; playerPos=-1; gameOver=false; next_turn();
-}
+log+=startVrt+" 1;";// roundNum=0; playerPos=-1; gameOver=false; next_turn();
+if (ws!=null&&!dontSend) {
+ws.send("update "+JSON.stringify({ fieldDesc: ta.value, roundMax: M, p: p, playersList: players, pos: startVrt}), { binary: false, }); } }
 
+/*
 function make_turn() {
 console.debug("startVrt,moveVrt,gameOver,playerPos,roundNum\n",startVrt,moveVrt,gameOver,playerPos,roundNum);
 if (gameOver) { myalert("Game is over!"); return; }
@@ -152,7 +192,82 @@ if (moveVrt==null) { myalert("You must choose a vertex!"); return; }
 if (edges[startVrt][moveVrt]==0) { myalert("There must be an edge between chosen vertices!"); return; }
 var val=Math.random(); console.log(startVrt,moveVrt,val); log+=moveVrt+" "+((val<p)?1:0)+";";
 draw_arrow(mu(vertices[startVrt],U),mu(vertices[moveVrt],U),(val<p)?dgre:dred); startVrt=(val<p)?moveVrt:startVrt;
-moveVrt=null; if (val<p) move_hgl(moveVrt); next_turn(); }
+moveVrt=null; if (val<p) move_hgl(moveVrt); next_turn(); } */
+
+function make_turn() {
+console.debug("startVrt,moveVrt,gameOver,playerPos,roundNum\n",startVrt,moveVrt,gameOver,playerPos,roundNum);
+if (gameOver) { myalert("Game is over!"); return; }
+if (moveVrt==null) { myalert("You must choose a vertex!"); return; }
+if (edges[startVrt][moveVrt]==0) { myalert("There must be an edge between chosen vertices!"); return; }
+if (ws==null) { myalert("Not connected!"); return; }
+ws.send("move", { binary: false, }); }
+
+function connect() {
+if (ws!=null) {console.debug(ws); myalert("Already connected!"); return; }
+ws=new WebSocket("ws://localhost:5705","tow-graph");
+ws.onclose=function(event) { console.debug(event); myalert("Connection closed with code "+event.code+
+" and reason "+event.reason+"!"); ws=null; };
+ws.onerror=function(event) { console.debug(event); myalert("Connection error: "+event+"!"); ws=null; };
+ws.onopen=function(event) { console.debug(event); myalert("Successfully connected!",dgre); };
+ws.onmessage=function(event) {
+console.debug(event);
+if (errorRE.test(event.data)) myalert(errorRE.exec(event.data).groups.msg);
+if (succRE.test(event.data)) {
+var gr=succRE.exec(event.data).groups;
+draw_arrow(mu(vertices[gr.pos],U),mu(vertices[gr.movePos],U),(gr.suc==1)?dgre:dred); }
+if (roomRE.test(event.data)) {
+var data=JSON.parse(roomRE.exec(event.data).groups.data);
+if (!("fieldDesc" in data&&data.fieldDesc.length==0)) {
+if ("fieldDesc" in data)
+document.getElementById("field_desc").innerHTML=data.fieldDesc; __update=true; draw_field(true);
+for (key in data) {
+if (key=="p") p=+data.p;
+if (key=="players") {
+for (var i=0;i<players.length;++i) {
+var fl=false;
+for (var j=0;j<data.players.length;++j)
+if (data.players[j]==players[i]) fl=true;
+document.getElementById("player"+i).style.backgroundColor=fl?colors[i]:"gray";
+} }
+if (key=="pos") { startVrt=data.pos; move_hgl(startVrt); }
+if (key=="movePos"&&data.movePos!=null) { moveVrt=data.movePos;
+if (startVrt!=moveVrt&&moveVrt!=null&&startVrt!=null)
+draw_arrow(mu(vertices[startVrt],U),mu(vertices[moveVrt],U),(edges[startVrt][moveVrt]==1)?"gray":dred);
+else hide_arrow(); }
+if (key=="gameOver"&&data.gameOver) { gameOver=true; do_game_over(); }
+if (key=="playerPos") { playerPos=data.playerPos; set_round_label(); }
+if (key=="roundNum") { roundNum=data.roundNum; set_round_label(); }
+if (key=="log") { serverLog=data.log; }
+} } } }; }
+
+function leave() { ws.send("leave", { binary: false, }); }
+
+function start() { ws.send("start", { binary: false, }); }
+
+function join() {
+var key=document.getElementById("key").value,name=document.getElementById("name").value;
+if (key.length==0||name.length==0) { myalert("Key and name can't be empty!"); return; }
+if (ws==null) { myalert("Not connected!"); return; }
+ws.send("join "+key+" "+name, { binary: false, });
+if (ws!=null) { var ta=document.getElementById("field_desc");
+ws.send("update "+JSON.stringify({ fieldDesc: ta.value, roundMax: M, p: p,
+playersList: players, pos: startVrt}), { binary: false, }); } }
+
+function disconnect() { if (ws!=null) leave(); setTimeout(function() { ws.close(1000); ws=null; }, 1000); }
+
+function log_rev() {
+if (logPos==0) { myalert("Already at first move!"); return; }
+logPos--; update_log(); }
+
+function log_fwd() {
+if (logPos==serverLog.length-1) { myalert("Already at last move!"); return; }
+logPos++; update_log(); }
+
+function update_log() {
+move_hgl(serverLog[logPos][0]); document.getElementById("turnno").innerHTML=((logPos-logPos%K)/K+1);
+var plsp=document.getElementById("logplayer"); plsp.style.backgroundColor=colors[logPos%K];
+plsp.innerHTML=players[logPos%K];
+draw_arrow(mu(vertices[serverLog[logPos][0]],U),mu(vertices[serverLog[logPos][1]],U),serverLog[logPos][2]?dgre:dred);}
 </script>
 </head>
 <body onload="init()">
@@ -167,9 +282,22 @@ moveVrt=null; if (val<p) move_hgl(moveVrt); next_turn(); }
 </td>
 <td style="vertical-align: top;">
 <textarea id="field_desc" cols="80" rows="24" placeholder="Field description"></textarea><br>
-<button id="field_submit" onclick="draw_field()">Create field</button>
-<button id="field_load" onclick="load_sample()">Load example</button>
-<button id="make_turn" onclick="make_turn()">Make turn</button>
+<select id="select_graph">
+<option value="petersen">Petersen graph</option>
+<option value="grotzsch">Grötzsch graph</option>
+</select>
+<button id="field_load" onclick="load_sample()">Load example</button><br>
+<button id="field_submit" onclick="draw_field()">Create field</button><br>
+<button id="connect" onclick="connect()">Connect</button>
+<button id="disconnect" onclick="disconnect()">Disconnect</button><br>
+<input id="key" placeholder="Key"></input><br>
+<input id="name" placeholder="Name"></input><br>
+<button id="join" onclick="join()">Join</button>
+<button id="leave" onclick="leave()">Leave</button><br>
+<button id="start" onclick="start()">Start</button>
+<button id="make_turn" onclick="make_turn()">Make turn</button><br>
+<button id="log_rev" onclick="log_rev()" disabled>Previous turn</button>
+<button id="log_fwd" onclick="log_fwd()" disabled>Next turn</button><br>
 </td></tr></table>
 </body>
 </html>
